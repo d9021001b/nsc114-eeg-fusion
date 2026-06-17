@@ -1,0 +1,10 @@
+# 嚴禁任何參與者資料/輸出進版控（Data 不可分享）
+data/
+**/eeg_feature_cache/
+**/*_predictions.csv
+**/*bagged*.csv
+**/*manifest*.csv
+*.pt
+*.npz
+.venv/
+__pycache__/

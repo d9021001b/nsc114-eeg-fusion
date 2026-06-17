@@ -1,0 +1,10 @@
+numpy
+pandas
+scikit-learn
+matplotlib
+python-docx
+Pillow
+scipy
+shap
+# Optional, only needed for deep baseline scripts:
+# torch
