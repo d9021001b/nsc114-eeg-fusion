@@ -1,5 +1,7 @@
 # 嚴禁任何參與者資料/輸出進版控（Data 不可分享）
 data/
+analysis/
+reports/
 **/eeg_feature_cache/
 **/*_predictions.csv
 **/*bagged*.csv

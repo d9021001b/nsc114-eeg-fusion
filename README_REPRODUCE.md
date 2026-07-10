@@ -1,54 +1,80 @@
-# NSC114 EEG Multimodal Small-Data Reproducibility Package
+# Reproducing the Current NSC114 Nested-Fusion Analysis
 
-Created: 2026-06-04 15:46:53
-
-## Purpose
-
-This package contains the data, scripts, frozen analysis outputs, Word reports, and environment helpers needed to reproduce the 114-case NSC EEG multimodal small-data modeling project on another workstation.
-
-## Main Reproduction Target
-
-Primary script:
+## 1. Environment
 
 ```bash
-python scripts/nsc_restricted_subject_bagging_tail_stats.py \
+python3 -m venv .venv
+.venv/bin/pip install -r env/requirements.txt
+```
+
+## 2. Restricted local inputs
+
+Place locally authorized data under the following ignored paths:
+
+```text
+data/
+  nsc_dataset_images/
+    manifest.csv
+    0/.../*.png
+    1/.../*.png
+  physiology-csv/
+    *.csv
+  eeg-csv-data-by-class/
+    0/.../*.csv
+    1/.../*.csv
+    2/.../*.csv
+    3/.../*.csv
+    4/.../*.csv
+```
+
+The manifest and output prediction files contain identifiers and must remain outside version control.
+
+## 3. Generate the fixed raw/2D OOF input
+
+```bash
+.venv/bin/python scripts/nsc_uncertain_band_patch_refinement.py \
+  --csv-dir data/physiology-csv \
   --manifest data/nsc_dataset_images/manifest.csv \
-  --eeg-root data/eeg-csv-data-by-class \
-  --base-predictions analysis/nsc_uncertain_band_patch_refinement_20260520/uncertain_band_predictions.csv \
-  --cache-dir analysis/recomputed_eeg_feature_cache \
-  --out-dir analysis/recomputed_nsc_restricted_subject_bagging_tail_stats_20260604 \
-  --penalty l1 --C 0.25 --top-k 320 --objective min_metric --w-eeg-max 0.25 --w-eeg-step 0.05
+  --image-root data/nsc_dataset_images \
+  --out-dir analysis/nsc_uncertain_band_patch_refinement_20260520 \
+  --report reports/NSC_uncertain_band_patch_family_refinement_20260520.docx \
+  --outer-random-state 42 \
+  --random-state 20260520
 ```
 
-Windows users can run:
+The historical `mi_max` column written to `uncertain_band_predictions.csv` is the fold-selected raw/2D uncertain-band output. It must not be interpreted as the pure `max_i g(I_i)` image score.
 
-1. `setup_env.bat`
-2. `run_final_fusion.bat`
-
-Linux users can run:
+## 4. Run the current nested EEG/signal fusion
 
 ```bash
-bash run_final_fusion.sh
+.venv/bin/python scripts/nsc114_airtight_fully_nested_20260710.py \
+  --manifest data/nsc_dataset_images/manifest.csv \
+  --physio-root data/physiology-csv \
+  --eeg-root data/eeg-csv-data-by-class \
+  --mi-predictions analysis/nsc_uncertain_band_patch_refinement_20260520/uncertain_band_predictions.csv \
+  --out-dir analysis/nsc114_airtight_fully_nested_20260710
 ```
 
-## Included Data
+The script name is retained for provenance. Its current documentation and generated manifest state the actual boundary: EEG/signal selection is nested on the fusion folds, while the raw/2D OOF input is fixed from a separate cross-fitting run.
 
-- `data/eeg-csv-data-by-class`: EEG CSV trials by class folder. In this project, folder `0` is class 0; folders `1`, `2`, `3`, `4` are class 1.
-- `data/nsc_dataset_images`: 2D time-series image dataset and `manifest.csv`.
+## 5. Rebuild aggregate metrics and figures
 
-## Included Frozen Outputs
+```bash
+.venv/bin/python scripts/nsc114_airtight_figures_and_table2_20260710.py
+```
 
-- `analysis/nsc_restricted_subject_bagging_tail_stats_corrected_20260521`: final corrected tail-statistics bagged fusion output.
-- `analysis/nsc_uncertain_band_patch_refinement_20260520`: frozen 2D branch base predictions used by the final fusion script.
-- `analysis/nsc_replicated_literature_models_vs_best_20260520`: literature-method comparison tables and figures used by the paper.
-- `analysis/nsc_eeg_shap_neuropsych_20260521`: SHAP/surrogate feature-importance outputs and neuropsychological explanation materials.
+Expected aggregate values are recorded in `expected_outputs/aggregate_metrics_20260710.json`. Per-participant predictions remain ignored and must not be published.
 
-## Expected Main Metrics
+## 6. Minimal code-only checks
 
-See `expected_outputs/manifest.json` and `expected_outputs/bagged_metrics_summary.csv` for the frozen corrected run.
+These checks do not require restricted data:
 
-## Notes
+```bash
+python3 -m compileall -q scripts
+python3 scripts/nsc114_airtight_fully_nested_20260710.py --help
+python3 scripts/nsc_uncertain_band_patch_refinement.py --help
+```
 
-- The final claim level is patient-aware 10-fold OOF with multi-seed bagging, not an external validation claim.
-- Recomputed metrics should be close to the frozen outputs. Small differences can occur from package/library versions.
-- Deep baseline scripts may require PyTorch; the main final fusion does not.
+## Interpretation
+
+The aggregate reference result is a within-dataset participant-level OOF estimate. It does not establish external generalization or a statistically confirmed incremental benefit of the signal-interaction branch.
