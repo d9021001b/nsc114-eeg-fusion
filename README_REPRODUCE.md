@@ -1,54 +1,71 @@
-# NSC114 EEG Multimodal Small-Data Reproducibility Package
+# Reproducing the Current NSC114 Nested-Fusion Analysis
 
-Created: 2026-06-04 15:46:53
-
-## Purpose
-
-This package contains the data, scripts, frozen analysis outputs, Word reports, and environment helpers needed to reproduce the 114-case NSC EEG multimodal small-data modeling project on another workstation.
-
-## Main Reproduction Target
-
-Primary script:
+## 1. Environment
 
 ```bash
-python scripts/nsc_restricted_subject_bagging_tail_stats.py \
+python3 -m venv .venv
+.venv/bin/pip install -r env/requirements.txt
+```
+
+## 2. Restricted local inputs
+
+Place locally authorized data under the following ignored paths:
+
+```text
+data/
+  nsc_dataset_images/
+    manifest.csv
+    0/.../*.png
+    1/.../*.png
+  physiology-csv/
+    *.csv
+  eeg-csv-data-by-class/
+    0/.../*.csv
+    1/.../*.csv
+    2/.../*.csv
+    3/.../*.csv
+    4/.../*.csv
+```
+
+The manifest and output prediction files contain identifiers and must remain outside version control.
+
+## 3. Run the current fully nested multimodal analysis
+
+```bash
+.venv/bin/python scripts/nsc114_true_nested_top3_grid8_20260710.py \
   --manifest data/nsc_dataset_images/manifest.csv \
+  --physio-root data/physiology-csv \
   --eeg-root data/eeg-csv-data-by-class \
-  --base-predictions analysis/nsc_uncertain_band_patch_refinement_20260520/uncertain_band_predictions.csv \
-  --cache-dir analysis/recomputed_eeg_feature_cache \
-  --out-dir analysis/recomputed_nsc_restricted_subject_bagging_tail_stats_20260604 \
-  --penalty l1 --C 0.25 --top-k 320 --objective min_metric --w-eeg-max 0.25 --w-eeg-step 0.05
+  --images-root data/nsc_dataset_images \
+  --eeg-cache analysis/nsc_eeg_feature_cache \
+  --image-grid 8 \
+  --image-aggregation top3mean \
+  --image-top-k 174 \
+  --image-model ExtraTrees \
+  --out-dir analysis/nsc114_true_nested_top3_grid8_20260710
 ```
 
-Windows users can run:
+The image branch is regenerated within each outer fold. Training participants receive inner out-of-fold image scores; outer-test participants are scored only after fitting on the outer-training set.
 
-1. `setup_env.bat`
-2. `run_final_fusion.bat`
-
-Linux users can run:
+## 4. Rebuild aggregate metrics
 
 ```bash
-bash run_final_fusion.sh
+.venv/bin/python scripts/nsc114_true_nested_table2_20260711.py \
+  --out-dir analysis/nsc114_true_nested_top3_grid8_20260710
 ```
 
-## Included Data
+Expected aggregate values are recorded in `expected_outputs/aggregate_metrics_v4_20260710.json`; the mean-pooling sensitivity reference is in `expected_outputs/aggregate_metrics_v4_mean_sensitivity_20260710.json`. Per-participant predictions remain ignored and must not be published.
 
-- `data/eeg-csv-data-by-class`: EEG CSV trials by class folder. In this project, folder `0` is class 0; folders `1`, `2`, `3`, `4` are class 1.
-- `data/nsc_dataset_images`: 2D time-series image dataset and `manifest.csv`.
+## 5. Minimal code-only checks
 
-## Included Frozen Outputs
+These checks do not require restricted data:
 
-- `analysis/nsc_restricted_subject_bagging_tail_stats_corrected_20260521`: final corrected tail-statistics bagged fusion output.
-- `analysis/nsc_uncertain_band_patch_refinement_20260520`: frozen 2D branch base predictions used by the final fusion script.
-- `analysis/nsc_replicated_literature_models_vs_best_20260520`: literature-method comparison tables and figures used by the paper.
-- `analysis/nsc_eeg_shap_neuropsych_20260521`: SHAP/surrogate feature-importance outputs and neuropsychological explanation materials.
+```bash
+python3 -m compileall -q scripts
+python3 scripts/nsc114_true_nested_top3_grid8_20260710.py --help
+python3 scripts/nsc114_true_nested_table2_20260711.py --help
+```
 
-## Expected Main Metrics
+## Interpretation
 
-See `expected_outputs/manifest.json` and `expected_outputs/bagged_metrics_summary.csv` for the frozen corrected run.
-
-## Notes
-
-- The final claim level is patient-aware 10-fold OOF with multi-seed bagging, not an external validation claim.
-- Recomputed metrics should be close to the frozen outputs. Small differences can occur from package/library versions.
-- Deep baseline scripts may require PyTorch; the main final fusion does not.
+The aggregate reference result is a within-dataset participant-level OOF estimate. It does not establish external generalization, and the lower mean-pooling sensitivity result shows that repeated-instance aggregation remains an important design choice.

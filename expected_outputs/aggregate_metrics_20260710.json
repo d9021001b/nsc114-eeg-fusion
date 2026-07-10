@@ -1,0 +1,38 @@
+{
+  "artifact": "aggregate reference metrics for the current nested-fusion analysis",
+  "subjects": 114,
+  "class_counts": {
+    "class_0": 62,
+    "class_1": 52
+  },
+  "claim_boundary": "EEG and signal selection are nested on fusion outer-training participants. The mi_max input is a fixed, separately cross-fitted raw/2D uncertain-band score and is not regenerated on the fusion outer folds.",
+  "fixed_raw_2d_score": {
+    "AUROC": 0.7834987593,
+    "AUPRC": 0.7820087755,
+    "CM": [33, 29, 10, 42]
+  },
+  "nested_eeg_base": {
+    "AUROC": 0.7915632754,
+    "AUPRC": 0.7882531021,
+    "CM": [35, 27, 10, 42]
+  },
+  "nested_base_plus_signal_candidate": {
+    "AUROC": 0.8076923077,
+    "AUPRC": 0.809187187,
+    "accuracy": 0.7105263158,
+    "sensitivity": 0.75,
+    "specificity": 0.6774193548,
+    "PPV": 0.6610169492,
+    "NPV": 0.7636363636,
+    "Brier": 0.1819223131,
+    "CM": [42, 20, 13, 39]
+  },
+  "paired_delta_fused_minus_base": {
+    "delta_AUROC": 0.0161290323,
+    "delta_AUROC_95CI": [-0.013337469, 0.0483870968],
+    "p_AUROC": 0.3088,
+    "delta_AUPRC": 0.0209340848,
+    "delta_AUPRC_95CI": [-0.0195586902, 0.0679450937],
+    "p_AUPRC": 0.3482
+  }
+}
