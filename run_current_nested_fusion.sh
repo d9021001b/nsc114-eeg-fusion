@@ -14,20 +14,18 @@ for required in \
   fi
 done
 
-"$PY" "$ROOT/scripts/nsc_uncertain_band_patch_refinement.py" \
-  --csv-dir "$ROOT/data/physiology-csv" \
-  --manifest "$ROOT/data/nsc_dataset_images/manifest.csv" \
-  --image-root "$ROOT/data/nsc_dataset_images" \
-  --out-dir "$ROOT/analysis/nsc_uncertain_band_patch_refinement_20260520" \
-  --report "$ROOT/reports/NSC_uncertain_band_patch_family_refinement_20260520.docx" \
-  --outer-random-state 42 \
-  --random-state 20260520
+OUT="$ROOT/analysis/nsc114_true_nested_top3_grid8_20260710"
 
-"$PY" "$ROOT/scripts/nsc114_airtight_fully_nested_20260710.py" \
+"$PY" "$ROOT/scripts/nsc114_true_nested_top3_grid8_20260710.py" \
   --manifest "$ROOT/data/nsc_dataset_images/manifest.csv" \
   --physio-root "$ROOT/data/physiology-csv" \
   --eeg-root "$ROOT/data/eeg-csv-data-by-class" \
-  --mi-predictions "$ROOT/analysis/nsc_uncertain_band_patch_refinement_20260520/uncertain_band_predictions.csv" \
-  --out-dir "$ROOT/analysis/nsc114_airtight_fully_nested_20260710"
+  --images-root "$ROOT/data/nsc_dataset_images" \
+  --eeg-cache "$ROOT/analysis/nsc_eeg_feature_cache" \
+  --image-grid 8 \
+  --image-aggregation top3mean \
+  --image-top-k 174 \
+  --image-model ExtraTrees \
+  --out-dir "$OUT"
 
-"$PY" "$ROOT/scripts/nsc114_airtight_figures_and_table2_20260710.py"
+"$PY" "$ROOT/scripts/nsc114_true_nested_table2_20260711.py" --out-dir "$OUT"

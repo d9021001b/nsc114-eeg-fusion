@@ -29,52 +29,43 @@ data/
 
 The manifest and output prediction files contain identifiers and must remain outside version control.
 
-## 3. Generate the fixed raw/2D OOF input
+## 3. Run the current fully nested multimodal analysis
 
 ```bash
-.venv/bin/python scripts/nsc_uncertain_band_patch_refinement.py \
-  --csv-dir data/physiology-csv \
-  --manifest data/nsc_dataset_images/manifest.csv \
-  --image-root data/nsc_dataset_images \
-  --out-dir analysis/nsc_uncertain_band_patch_refinement_20260520 \
-  --report reports/NSC_uncertain_band_patch_family_refinement_20260520.docx \
-  --outer-random-state 42 \
-  --random-state 20260520
-```
-
-The historical `mi_max` column written to `uncertain_band_predictions.csv` is the fold-selected raw/2D uncertain-band output. It must not be interpreted as the pure `max_i g(I_i)` image score.
-
-## 4. Run the current nested EEG/signal fusion
-
-```bash
-.venv/bin/python scripts/nsc114_airtight_fully_nested_20260710.py \
+.venv/bin/python scripts/nsc114_true_nested_top3_grid8_20260710.py \
   --manifest data/nsc_dataset_images/manifest.csv \
   --physio-root data/physiology-csv \
   --eeg-root data/eeg-csv-data-by-class \
-  --mi-predictions analysis/nsc_uncertain_band_patch_refinement_20260520/uncertain_band_predictions.csv \
-  --out-dir analysis/nsc114_airtight_fully_nested_20260710
+  --images-root data/nsc_dataset_images \
+  --eeg-cache analysis/nsc_eeg_feature_cache \
+  --image-grid 8 \
+  --image-aggregation top3mean \
+  --image-top-k 174 \
+  --image-model ExtraTrees \
+  --out-dir analysis/nsc114_true_nested_top3_grid8_20260710
 ```
 
-The script name is retained for provenance. Its current documentation and generated manifest state the actual boundary: EEG/signal selection is nested on the fusion folds, while the raw/2D OOF input is fixed from a separate cross-fitting run.
+The image branch is regenerated within each outer fold. Training participants receive inner out-of-fold image scores; outer-test participants are scored only after fitting on the outer-training set.
 
-## 5. Rebuild aggregate metrics and figures
+## 4. Rebuild aggregate metrics
 
 ```bash
-.venv/bin/python scripts/nsc114_airtight_figures_and_table2_20260710.py
+.venv/bin/python scripts/nsc114_true_nested_table2_20260711.py \
+  --out-dir analysis/nsc114_true_nested_top3_grid8_20260710
 ```
 
-Expected aggregate values are recorded in `expected_outputs/aggregate_metrics_20260710.json`. Per-participant predictions remain ignored and must not be published.
+Expected aggregate values are recorded in `expected_outputs/aggregate_metrics_v4_20260710.json`; the mean-pooling sensitivity reference is in `expected_outputs/aggregate_metrics_v4_mean_sensitivity_20260710.json`. Per-participant predictions remain ignored and must not be published.
 
-## 6. Minimal code-only checks
+## 5. Minimal code-only checks
 
 These checks do not require restricted data:
 
 ```bash
 python3 -m compileall -q scripts
-python3 scripts/nsc114_airtight_fully_nested_20260710.py --help
-python3 scripts/nsc_uncertain_band_patch_refinement.py --help
+python3 scripts/nsc114_true_nested_top3_grid8_20260710.py --help
+python3 scripts/nsc114_true_nested_table2_20260711.py --help
 ```
 
 ## Interpretation
 
-The aggregate reference result is a within-dataset participant-level OOF estimate. It does not establish external generalization or a statistically confirmed incremental benefit of the signal-interaction branch.
+The aggregate reference result is a within-dataset participant-level OOF estimate. It does not establish external generalization, and the lower mean-pooling sensitivity result shows that repeated-instance aggregation remains an important design choice.
